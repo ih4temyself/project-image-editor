@@ -10,7 +10,12 @@ def register(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
+            # Save the user and set the backend
             user = form.save()
+            # Set the backend for the user
+            user.backend = (
+                "django.contrib.auth.backends.ModelBackend"  # Specify the backend here
+            )
             login(request, user)
             messages.success(request, "Registration successful!")
             return redirect("home")
@@ -41,23 +46,3 @@ def login_view(request):
     else:
         form = AuthenticationForm()
     return render(request, "authapp/login.html", {"form": form})
-
-
-def index(request):
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get("username")
-            password = form.cleaned_data.get("password")
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Welcome back, {username}!")
-                return redirect("home")
-            else:
-                messages.error(request, "Invalid username or password.")
-        else:
-            messages.error(request, "Invalid username or password.")
-    else:
-        form = AuthenticationForm()
-    return render(request, "index.html", {"form": form})

@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+  <!-- Image Editor Interface -->
+  <div class="flex h-[calc(100vh-8rem)] overflow-hidden rounded-xl card">
+    <!-- Left Sidebar with Tools -->
+    <div class="w-64 bg-[#1a1a1a] border-r border-gray-800 flex flex-col">
+      <!-- Sidebar content remains the same -->
+      <div class="p-4 border-b border-gray-800">
+        <h3 class="text-lg font-semibold text-white flex items-center">
+          <i class="fas fa-tools mr-2 text-purple-400"></i> Editing Tools
+        </h3>
+      </div>
+      
+      <div class="overflow-y-auto flex-grow">
+        <!-- Basic Tools Section -->
+        <div class="p-3">
+          <h4 class="text-xs uppercase text-gray-500 font-semibold mb-2">Basic Tools</h4>
+          <div class="space-y-2">
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-crop mr-3 text-purple-400 w-5 text-center"></i> Crop
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-rotate mr-3 text-purple-400 w-5 text-center"></i> Rotate
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-expand mr-3 text-purple-400 w-5 text-center"></i> Resize
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-object-group mr-3 text-purple-400 w-5 text-center"></i> Frame
+            </button>
+          </div>
+        </div>
+        
+        <!-- Adjustments Section -->
+        <div class="p-3">
+          <h4 class="text-xs uppercase text-gray-500 font-semibold mb-2">Adjustments</h4>
+          <div class="space-y-2">
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-sun mr-3 text-purple-400 w-5 text-center"></i> Brightness
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-adjust mr-3 text-purple-400 w-5 text-center"></i> Contrast
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-tint mr-3 text-purple-400 w-5 text-center"></i> Saturation
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-magic mr-3 text-purple-400 w-5 text-center"></i> Auto Enhance
+            </button>
+          </div>
+        </div>
+        
+        <!-- Filters Section -->
+        <div class="p-3">
+          <h4 class="text-xs uppercase text-gray-500 font-semibold mb-2">Filters</h4>
+          <div class="space-y-2">
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-moon mr-3 text-purple-400 w-5 text-center"></i> Noir
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-fire mr-3 text-purple-400 w-5 text-center"></i> Warm
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-snowflake mr-3 text-purple-400 w-5 text-center"></i> Cool
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-film mr-3 text-purple-400 w-5 text-center"></i> Vintage
+            </button>
+          </div>
+        </div>
+        
+        <!-- Effects Section -->
+        <div class="p-3">
+          <h4 class="text-xs uppercase text-gray-500 font-semibold mb-2">Effects</h4>
+          <div class="space-y-2">
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-brush mr-3 text-purple-400 w-5 text-center"></i> Blur
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-sparkles mr-3 text-purple-400 w-5 text-center"></i> Sharpen
+            </button>
+            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-wand-magic-sparkles mr-3 text-purple-400 w-5 text-center"></i> Vignette
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bottom Actions -->
+      <div class="p-3 border-t border-gray-800">
+        <button class="w-full bg-purple-700 hover:bg-purple-600 text-white py-2 rounded-lg flex items-center justify-center transition-colors">
+          <i class="fas fa-download mr-2"></i> Save Image
+        </button>
+      </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="flex-grow bg-[#121212] flex flex-col">
+      <!-- Top Navigation Bar -->
+      <div class="bg-[#1a1a1a] border-b border-gray-800 p-3 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+            <i class="fas fa-undo"></i>
+          </button>
+          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+            <i class="fas fa-redo"></i>
+          </button>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <div class="relative group">
+            <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors flex items-center">
+              <i class="fas fa-folder mr-2"></i> Gallery
+              <i class="fas fa-chevron-down ml-2 text-xs"></i>
+            </button>
+            <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-lg shadow-lg border border-gray-800 hidden group-hover:block z-10">
+              <div class="py-1">
+                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Recent Images</a>
+                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">All Images</a>
+                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Shared With Me</a>
+              </div>
+            </div>
+          </div>
+          
+          <div class="relative group">
+            <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors flex items-center">
+              <i class="fas fa-cog mr-2"></i> Settings
+              <i class="fas fa-chevron-down ml-2 text-xs"></i>
+            </button>
+            <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-lg shadow-lg border border-gray-800 hidden group-hover:block z-10">
+              <div class="py-1">
+                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Account Settings</a>
+                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Preferences</a>
+                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Keyboard Shortcuts</a>
+                <div class="border-t border-gray-800 my-1"></div>
+                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-red-400 hover:bg-[#2d2d2d]">Logout</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Image Editing Area -->
+      <div class="flex-grow flex items-center justify-center p-8 relative">
+        <div id="image-container" class="relative flex items-center justify-center">
+          <!-- Image Upload Area (shown when no image is loaded) -->
+          <div id="upload-area" class="w-full max-w-xl h-96 border-2 border-dashed border-gray-700 rounded-lg flex flex-col items-center justify-center p-6 transition-all hover:border-purple-500 {% if uploaded_image %}hidden{% endif %}">
+            <div class="text-center">
+              <i class="fas fa-cloud-upload-alt text-5xl text-gray-500 mb-4"></i>
+              <h3 class="text-xl font-semibold text-gray-300 mb-2">Upload an image to edit</h3>
+              <p class="text-gray-500 mb-6">Drag and drop an image here, or click to browse</p>
+              
+              <!-- IMPORTANT: Proper form for Django file upload -->
+              <form id="upload-form" method="post" action="{% url 'upload_image' %}" enctype="multipart/form-data" class="hidden">
+                {% csrf_token %}
+                <input id="file-upload" type="file" name="image" accept="image/*" />
+                <input type="submit" value="Upload" />
+              </form>
+              
+              <button id="browse-button" class="bg-purple-700 hover:bg-purple-600 text-white py-2 px-6 rounded-lg cursor-pointer transition-colors inline-flex items-center">
+                <i class="fas fa-image mr-2"></i> Choose Image
+              </button>
+              
+              <p class="text-xs text-gray-500 mt-4">Supports JPG, PNG, WebP, and GIF up to 10MB</p>
+            </div>
+          </div>
+          
+          <!-- This is where the image will be displayed after upload -->
+          <img id="editing-image" class="max-w-full max-h-full object-contain {% if not uploaded_image %}hidden{% endif %}" 
+               src="{% if uploaded_image %}{{ uploaded_image.url }}{% else %}/placeholder.svg{% endif %}" 
+               alt="Editing image" />
+          
+          <!-- Image editing controls (shown when image is loaded) -->
+          <div id="image-controls" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-[#1a1a1a] rounded-full px-4 py-2 shadow-lg {% if not uploaded_image %}hidden{% endif %}">
+            <div class="flex items-center space-x-4">
+              <button class="p-2 text-gray-300 hover:text-white">
+                <i class="fas fa-search-minus"></i>
+              </button>
+              <input type="range" min="50" max="150" value="100" class="w-32 accent-purple-500" />
+              <button class="p-2 text-gray-300 hover:text-white">
+                <i class="fas fa-search-plus"></i>
+              </button>
+              <div class="h-6 border-r border-gray-700 mx-2"></div>
+              <button class="p-2 text-gray-300 hover:text-white">
+                <i class="fas fa-expand-arrows-alt"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const fileUpload = document.getElementById('file-upload');
+      const uploadForm = document.getElementById('upload-form');
+      const browseButton = document.getElementById('browse-button');
+      const uploadArea = document.getElementById('upload-area');
+      const editingImage = document.getElementById('editing-image');
+      const imageControls = document.getElementById('image-controls');
+      
+      // Click on browse button to trigger file input
+      browseButton.addEventListener('click', function() {
+        fileUpload.click();
+      });
+      
+      // Handle file selection - submit the form when a file is selected
+      fileUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+          // Show loading state
+          browseButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+          browseButton.disabled = true;
+          
+          // Submit the form using AJAX
+          const formData = new FormData(uploadForm);
+          fetch(uploadForm.action, {
+            method: 'POST',
+            body: formData,
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.file_url) {
+              // Update the image source and show the image
+              editingImage.src = data.file_url;
+              editingImage.classList.remove('hidden');
+              uploadArea.classList.add('hidden');
+              browseButton.innerHTML = 'Choose Image';  // Reset button text
+              browseButton.disabled = false;
+            } else {
+              // Handle error (if any)
+              alert('Failed to upload image');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to upload image');
+          });
+        }
+      });
+      
+      // Handle drag and drop
+      uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('border-purple-500');
+      });
+      
+      uploadArea.addEventListener('dragleave', function() {
+        uploadArea.classList.remove('border-purple-500');
+      });
+      
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('border-purple-500');
+        
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          // Set the file input value to the dropped file
+          const dt = new DataTransfer();
+          dt.items.add(e.dataTransfer.files[0]);
+          fileUpload.files = dt.files;
+          
+          // Show loading state
+          browseButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+          browseButton.disabled = true;
+          
+          // Submit the form using AJAX
+          const formData = new FormData(uploadForm);
+          fetch(uploadForm.action, {
+            method: 'POST',
+            body: formData,
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.file_url) {
+              // Update the image source and show the image
+              editingImage.src = data.file_url;
+              editingImage.classList.remove('hidden');
+              uploadArea.classList.add('hidden');
+              browseButton.innerHTML = 'Choose Image';  // Reset button text
+              browseButton.disabled = false;
+            } else {
+              // Handle error (if any)
+              alert('Failed to upload image');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to upload image');
+          });
+        }
+      });
+      
+      // Click on upload area to trigger file input
+      uploadArea.addEventListener('click', function(e) {
+        // Only trigger if not clicking on the button (which has its own handler)
+        if (e.target !== browseButton && !browseButton.contains(e.target)) {
+          fileUpload.click();
+        }
+      });
+    });
+  </script>
+{% else %}
+  <!-- Login Form (Keep your existing login form for non-authenticated users) -->
+  <div class="flex flex-col items-center justify-center min-h-[80vh]">
+    <div class="w-full max-w-md card p-8">
+      <div class="text-center mb-8">
+        <div class="inline-block p-4 rounded-full bg-purple-900 bg-opacity-30 mb-4">
+          <i class="fas fa-lock text-4xl text-purple-400"></i>
+        </div>
+        <h2 class="text-3xl font-bold text-white">Welcome Back</h2>
+        <p class="text-gray-400 mt-2">Sign in to your account</p>
+      </div>
+      
+      <form method="post" action="{% url 'home' %}" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="space-y-4">
+          {% for field in form %}
+            <div class="space-y-2">
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300">
+                {{ field.label }}
+              </label>
+              <input type="{{ field.field.widget.input_type }}" 
+                    name="{{ field.html_name }}" 
+                    id="{{ field.id_for_label }}" 
+                    class="w-full input-field" 
+                    {% if field.field.required %}required{% endif %}>
+              {% if field.errors %}
+                <p class="text-red-400 text-xs mt-1">{{ field.errors.0 }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        
+        <div class="flex items-center justify-between text-sm">
+          <div class="flex items-center">
+            <input id="remember_me" name="remember_me" type="checkbox" class="h-4 w-4 bg-gray-700 border-gray-600 rounded">
+            <label for="remember_me" class="ml-2 block text-gray-300">Remember me</label>
+          </div>
+          <a href="#" class="link">Forgot password?</a>
+        </div>
+        
+        <button type="submit" class="w-full py-3 rounded-lg btn-primary flex items-center justify-center">
+          <i class="fas fa-sign-in-alt mr-2"></i> Sign In
+        </button>
+      </form>
+      
+      <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-600"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 bg-[#1e1e1e] text-gray-400">Or continue with</span>
+        </div>
+      </div>
+      
+      <a href="{% provider_login_url 'google' %}" class="w-full py-3 rounded-lg btn-google flex items-center justify-center">
+        <i class="fab fa-google mr-2"></i> Sign in with Google
+      </a>
+      
+      <div class="mt-8 text-center text-sm text-gray-400">
+        <p>Don't have an account? <a href="{% url 'register' %}" class="link">Create an account</a></p>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
