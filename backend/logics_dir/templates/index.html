@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load socialaccount %}
-{% block title %}Home{% endblock %}
+{% block title %}Editor{% endblock %}
 
 {% block content %}
 {% if user.is_authenticated %}
@@ -80,8 +80,8 @@
             <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
               <i class="fas fa-brush mr-3 text-purple-400 w-5 text-center"></i> Blur
             </button>
-            <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
-              <i class="fas fa-sparkles mr-3 text-purple-400 w-5 text-center"></i> Sharpen
+            <button id="yolov8-button" class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
+              <i class="fas fa-bullseye mr-3 text-purple-400 w-5 text-center"></i> YOLOv8 Process
             </button>
             <button class="w-full text-left p-2 rounded hover:bg-[#2d2d2d] text-gray-300 flex items-center transition-colors">
               <i class="fas fa-wand-magic-sparkles mr-3 text-purple-400 w-5 text-center"></i> Vignette
@@ -103,50 +103,15 @@
       <!-- Top Navigation Bar -->
       <div class="bg-[#1a1a1a] border-b border-gray-800 p-3 flex justify-between items-center">
         <div class="flex items-center space-x-4">
-          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
-            <i class="fas fa-arrow-left"></i>
-          </button>
-          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
-            <i class="fas fa-arrow-right"></i>
-          </button>
-          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+          <button id="undo-button" class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
             <i class="fas fa-undo"></i>
           </button>
-          <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+          <button id="redo-button" class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
             <i class="fas fa-redo"></i>
           </button>
-        </div>
-        
-        <div class="flex items-center space-x-2">
-          <div class="relative group">
-            <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors flex items-center">
-              <i class="fas fa-folder mr-2"></i> Gallery
-              <i class="fas fa-chevron-down ml-2 text-xs"></i>
-            </button>
-            <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-lg shadow-lg border border-gray-800 hidden group-hover:block z-10">
-              <div class="py-1">
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Recent Images</a>
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">All Images</a>
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Shared With Me</a>
-              </div>
-            </div>
-          </div>
-          
-          <div class="relative group">
-            <button class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors flex items-center">
-              <i class="fas fa-cog mr-2"></i> Settings
-              <i class="fas fa-chevron-down ml-2 text-xs"></i>
-            </button>
-            <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-lg shadow-lg border border-gray-800 hidden group-hover:block z-10">
-              <div class="py-1">
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Account Settings</a>
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Preferences</a>
-                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-[#2d2d2d]">Keyboard Shortcuts</a>
-                <div class="border-t border-gray-800 my-1"></div>
-                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-red-400 hover:bg-[#2d2d2d]">Logout</a>
-              </div>
-            </div>
-          </div>
+          <button id="delete-button" class="p-2 rounded-lg hover:bg-[#2d2d2d] text-gray-300 transition-colors">
+            <i class="fas fa-trash"></i>
+        </button>
         </div>
       </div>
       
@@ -176,9 +141,9 @@
           </div>
           
           <!-- This is where the image will be displayed after upload -->
-          <img id="editing-image" class="max-w-full max-h-full object-contain {% if not uploaded_image %}hidden{% endif %}" 
-               src="{% if uploaded_image %}{{ uploaded_image.url }}{% else %}/placeholder.svg{% endif %}" 
-               alt="Editing image" />
+          <img id="editing-image" 
+          class="max-w-full max-h-full object-contain" 
+          src="{% if request.session.uploaded_image_url %}{{ request.session.uploaded_image_url }}{% endif %}" />
           
           <!-- Image editing controls (shown when image is loaded) -->
           <div id="image-controls" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-[#1a1a1a] rounded-full px-4 py-2 shadow-lg {% if not uploaded_image %}hidden{% endif %}">
@@ -209,7 +174,54 @@
       const uploadArea = document.getElementById('upload-area');
       const editingImage = document.getElementById('editing-image');
       const imageControls = document.getElementById('image-controls');
-      
+      const deleteButton = document.getElementById('delete-button');
+
+      const uploadedImageURL = localStorage.getItem("uploaded_image_url");
+      if (uploadedImageURL) {
+          editingImage.src = uploadedImageURL;
+          editingImage.classList.remove('hidden');
+          uploadArea.classList.add('hidden');
+      }
+      deleteButton.addEventListener('click', function () {
+  // Confirm the deletion action
+  if (confirm('Are you sure you want to delete this image?')) {
+    // Get the CSRF token from the page
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Send a request to the backend to delete the image
+    fetch('/home/delete_image/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken 
+      },
+      body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.message) {
+        // Hide the uploaded image and show the upload area again
+        editingImage.classList.add('hidden');
+        uploadArea.classList.remove('hidden');
+
+        // Clear the image URL from localStorage to prevent the browser from using the cached image
+        localStorage.removeItem("uploaded_image_url");
+
+        // Reset the image source to empty or placeholder
+        editingImage.src = '';  // Or you can set it to a specific placeholder image URL
+
+        alert('Image deleted successfully');
+      } else {
+        alert('Failed to delete the image');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Failed to delete the image');
+    });
+  }
+});
+
       // Click on browse button to trigger file input
       browseButton.addEventListener('click', function() {
         fileUpload.click();
@@ -237,6 +249,8 @@
               uploadArea.classList.add('hidden');
               browseButton.innerHTML = 'Choose Image';  // Reset button text
               browseButton.disabled = false;
+
+              localStorage.setItem("uploaded_image_url", data.file_url);
             } else {
               // Handle error (if any)
               alert('Failed to upload image');
@@ -308,7 +322,31 @@
         }
       });
     });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const yolov8Button = document.getElementById('yolov8-button');
+        const editingImage = document.getElementById('editing-image');
+
+        yolov8Button.addEventListener('click', function () {
+            // Send a request to the backend to process the image with YOLOv8
+            fetch('/process_with_yolov8/', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.file_url) {
+                        // Update the image with the processed result
+                        editingImage.src = data.file_url;
+                    } else {
+                        alert('Failed to process the image.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to process the image.');
+                });
+        });
+    });
   </script>
+
 {% else %}
   <!-- Login Form (Keep your existing login form for non-authenticated users) -->
   <div class="flex flex-col items-center justify-center min-h-[80vh]">
