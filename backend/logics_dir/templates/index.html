@@ -168,184 +168,176 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const fileUpload = document.getElementById('file-upload');
-      const uploadForm = document.getElementById('upload-form');
-      const browseButton = document.getElementById('browse-button');
-      const uploadArea = document.getElementById('upload-area');
-      const editingImage = document.getElementById('editing-image');
-      const imageControls = document.getElementById('image-controls');
-      const deleteButton = document.getElementById('delete-button');
-
-      const uploadedImageURL = localStorage.getItem("uploaded_image_url");
-      if (uploadedImageURL) {
-          editingImage.src = uploadedImageURL;
-          editingImage.classList.remove('hidden');
-          uploadArea.classList.add('hidden');
-      }
-      deleteButton.addEventListener('click', function () {
-  // Confirm the deletion action
-  if (confirm('Are you sure you want to delete this image?')) {
-    // Get the CSRF token from the page
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    // Send a request to the backend to delete the image
-    fetch('/home/delete_image/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken 
-      },
-      body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.message) {
-        // Hide the uploaded image and show the upload area again
-        editingImage.classList.add('hidden');
-        uploadArea.classList.remove('hidden');
-
-        // Clear the image URL from localStorage to prevent the browser from using the cached image
-        localStorage.removeItem("uploaded_image_url");
-
-        // Reset the image source to empty or placeholder
-        editingImage.src = '';  // Or you can set it to a specific placeholder image URL
-
-        alert('Image deleted successfully');
-      } else {
-        alert('Failed to delete the image');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Failed to delete the image');
-    });
-  }
-});
-
-      // Click on browse button to trigger file input
-      browseButton.addEventListener('click', function() {
-        fileUpload.click();
-      });
-      
-      // Handle file selection - submit the form when a file is selected
-      fileUpload.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-          // Show loading state
-          browseButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
-          browseButton.disabled = true;
-          
-          // Submit the form using AJAX
-          const formData = new FormData(uploadForm);
-          fetch(uploadForm.action, {
-            method: 'POST',
-            body: formData,
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.file_url) {
-              // Update the image source and show the image
-              editingImage.src = data.file_url;
-              editingImage.classList.remove('hidden');
-              uploadArea.classList.add('hidden');
-              browseButton.innerHTML = 'Choose Image';  // Reset button text
-              browseButton.disabled = false;
-
-              localStorage.setItem("uploaded_image_url", data.file_url);
-            } else {
-              // Handle error (if any)
-              alert('Failed to upload image');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to upload image');
-          });
-        }
-      });
-      
-      // Handle drag and drop
-      uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadArea.classList.add('border-purple-500');
-      });
-      
-      uploadArea.addEventListener('dragleave', function() {
-        uploadArea.classList.remove('border-purple-500');
-      });
-      
-      uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('border-purple-500');
-        
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-          // Set the file input value to the dropped file
-          const dt = new DataTransfer();
-          dt.items.add(e.dataTransfer.files[0]);
-          fileUpload.files = dt.files;
-          
-          // Show loading state
-          browseButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
-          browseButton.disabled = true;
-          
-          // Submit the form using AJAX
-          const formData = new FormData(uploadForm);
-          fetch(uploadForm.action, {
-            method: 'POST',
-            body: formData,
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.file_url) {
-              // Update the image source and show the image
-              editingImage.src = data.file_url;
-              editingImage.classList.remove('hidden');
-              uploadArea.classList.add('hidden');
-              browseButton.innerHTML = 'Choose Image';  // Reset button text
-              browseButton.disabled = false;
-            } else {
-              // Handle error (if any)
-              alert('Failed to upload image');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to upload image');
-          });
-        }
-      });
-      
-      // Click on upload area to trigger file input
-      uploadArea.addEventListener('click', function(e) {
-        // Only trigger if not clicking on the button (which has its own handler)
-        if (e.target !== browseButton && !browseButton.contains(e.target)) {
-          fileUpload.click();
-        }
-      });
-    });
-    
-    document.addEventListener('DOMContentLoaded', function () {
-        const yolov8Button = document.getElementById('yolov8-button');
+        const fileUpload = document.getElementById('file-upload');
+        const uploadForm = document.getElementById('upload-form');
+        const browseButton = document.getElementById('browse-button');
+        const uploadArea = document.getElementById('upload-area');
         const editingImage = document.getElementById('editing-image');
-
-        yolov8Button.addEventListener('click', function () {
-            // Send a request to the backend to process the image with YOLOv8
-            fetch('/process_with_yolov8/', { method: 'POST' })
+        const imageControls = document.getElementById('image-controls');
+        const deleteButton = document.getElementById('delete-button');
+    
+        // Load image from localStorage if it exists
+        const uploadedImageURL = localStorage.getItem("uploaded_image_url");
+        if (uploadedImageURL) {
+            const bustUrl = uploadedImageURL + '?t=' + Date.now(); // Cache-busting
+            editingImage.src = bustUrl;
+            editingImage.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+        }
+    
+        // Handle image not found (404 error)
+        editingImage.addEventListener('error', function() {
+            editingImage.classList.add('hidden'); // Hide the broken image
+            uploadArea.classList.remove('hidden'); // Show the upload menu
+            localStorage.removeItem("uploaded_image_url"); // Clear invalid URL
+            editingImage.src = ''; // Reset the image source
+        });
+    
+        // Delete button handler
+        deleteButton.addEventListener('click', function () {
+            if (confirm('Are you sure you want to delete this image?')) {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                fetch('/home/delete_image/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({})
+                })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.file_url) {
-                        // Update the image with the processed result
-                        editingImage.src = data.file_url;
+                    if (data.message) {
+                        editingImage.classList.add('hidden');
+                        uploadArea.classList.remove('hidden');
+                        localStorage.removeItem("uploaded_image_url");
+                        editingImage.src = '';
+                        alert('Image deleted successfully');
                     } else {
-                        alert('Failed to process the image.');
+                        alert('Failed to delete the image');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Failed to process the image.');
+                    alert('Failed to delete the image');
                 });
+            }
+        });
+    
+        // File upload handler
+        browseButton.addEventListener('click', function() {
+            fileUpload.click();
+        });
+    
+        fileUpload.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                browseButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+                browseButton.disabled = true;
+                const formData = new FormData(uploadForm);
+                fetch(uploadForm.action, {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.file_url) {
+                        editingImage.src = data.file_url;
+                        editingImage.classList.remove('hidden');
+                        uploadArea.classList.add('hidden');
+                        browseButton.innerHTML = 'Choose Image';
+                        browseButton.disabled = false;
+                        localStorage.setItem("uploaded_image_url", data.file_url);
+                    } else {
+                        alert('Failed to upload image');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to upload image');
+                });
+            }
+        });
+    
+        // Drag and drop handlers (unchanged)
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('border-purple-500');
+        });
+    
+        uploadArea.addEventListener('dragleave', function() {
+            uploadArea.classList.remove('border-purple-500');
+        });
+    
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('border-purple-500');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                const dt = new DataTransfer();
+                dt.items.add(e.dataTransfer.files[0]);
+                fileUpload.files = dt.files;
+                browseButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+                browseButton.disabled = true;
+                const formData = new FormData(uploadForm);
+                fetch(uploadForm.action, {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.file_url) {
+                        editingImage.src = data.file_url;
+                        editingImage.classList.remove('hidden');
+                        uploadArea.classList.add('hidden');
+                        browseButton.innerHTML = 'Choose Image';
+                        browseButton.disabled = false;
+                        localStorage.setItem("uploaded_image_url", data.file_url);
+                    } else {
+                        alert('Failed to upload image');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to upload image');
+                });
+            }
+        });
+    
+        uploadArea.addEventListener('click', function(e) {
+            if (e.target !== browseButton && !browseButton.contains(e.target)) {
+                fileUpload.click();
+            }
+        });
+    
+        // YOLOv8 processing handler (unchanged)
+        document.getElementById('yolov8-button').addEventListener('click', function() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch('/home/process_with_yolov8/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.file_url) {
+                    const bustUrl = data.file_url + '?t=' + Date.now();
+                    editingImage.src = bustUrl;
+                    editingImage.classList.remove('hidden');
+                    localStorage.setItem("uploaded_image_url", data.file_url);
+                    alert('Image processed successfully with YOLOv8!');
+                } else {
+                    alert('Failed to process image: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to process image due to a network or server error.');
+            });
         });
     });
-  </script>
+    </script>
 
 {% else %}
   <!-- Login Form (Keep your existing login form for non-authenticated users) -->
