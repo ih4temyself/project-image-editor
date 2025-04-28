@@ -56,29 +56,50 @@ def upload_image(request):
 
     return JsonResponse({"error": "Invalid request or no image uploaded."}, status=400)
 
-
 @login_required
 def delete_image(request):
-    image_url = request.session.get("uploaded_image_url")
-    if not image_url:
+    uploaded_image_url = request.session.get("uploaded_image_url")
+    original_image_url = request.session.get("original_image_url")
+    
+    if not uploaded_image_url:
         return JsonResponse({"error": "No image uploaded"}, status=400)
 
-    file_name = os.path.basename(image_url)
-    image_path = os.path.join(settings.MEDIA_ROOT, file_name)
-
     try:
-        if os.path.exists(image_path):
-            os.remove(image_path)
-        else:
-            return JsonResponse(
-                {"error": f"Image not found at {image_path}"}, status=404
-            )
+        # Delete the uploaded/processed image
+        uploaded_file_path = uploaded_image_url.replace(settings.MEDIA_URL, settings.MEDIA_ROOT).replace('/', os.sep)
+        uploaded_file_path = os.path.normpath(uploaded_file_path)  # Normalize path
 
-        del request.session["uploaded_image_url"]
+        if os.path.exists(uploaded_file_path):
+            os.remove(uploaded_file_path)
+
+        # Delete the original image if it exists and is different
+        if original_image_url and original_image_url != uploaded_image_url:
+            original_file_path = original_image_url.replace(settings.MEDIA_URL, settings.MEDIA_ROOT).replace('/', os.sep)
+            original_file_path = os.path.normpath(original_file_path)
+            if os.path.exists(original_file_path):
+                os.remove(original_file_path)
+
+        # Clean up processed image directory for YOLOv8
+        base_name = os.path.splitext(os.path.basename(uploaded_file_path))[0]
+        processed_dir = os.path.join(settings.MEDIA_ROOT, "processed_images", str(request.user.id))
+        processed_file = os.path.join(processed_dir, f"{base_name}.jpg")
+
+        if os.path.exists(processed_file):
+            os.remove(processed_file)
+
+        # Remove processed directory if empty
+        if os.path.exists(processed_dir) and not os.listdir(processed_dir):
+            os.rmdir(processed_dir)
+
+        # Clear session data
+        if "uploaded_image_url" in request.session:
+            del request.session["uploaded_image_url"]
+        if "original_image_url" in request.session:
+            del request.session["original_image_url"]
+
         return JsonResponse({"message": "Image deleted successfully"})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
 
 @login_required
 def process_with_yolov8(request):

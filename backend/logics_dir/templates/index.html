@@ -5,9 +5,9 @@
 {% block content %}
 {% if user.is_authenticated %}
   <!-- Image Editor Interface -->
-  <div class="flex h-[calc(100vh-8rem)] overflow-hidden rounded-xl card">
+  <div class="flex min-h-[calc(100vh-4rem)] overflow-hidden rounded-xl card">
     <!-- Left Sidebar with Tools -->
-    <div class="w-64 bg-[#1a1a1a] border-r border-gray-800 flex flex-col">
+    <div class="w-64 bg-[#1a1a1a] border-r border-gray-800 flex flex-col h-full">
       <!-- Sidebar content remains the same -->
       <div class="p-4 border-b border-gray-800">
         <h3 class="text-lg font-semibold text-white flex items-center">
@@ -15,7 +15,7 @@
         </h3>
       </div>
       
-      <div class="overflow-y-auto flex-grow">
+      <div class="overflow-y-auto flex-grow min-h-0">
         <!-- Basic Tools Section -->
         <div class="p-3">
           {% comment %} <h4 class="text-xs uppercase text-gray-500 font-semibold mb-2">Basic Tools</h4>
@@ -83,7 +83,7 @@
       
       <!-- Bottom Actions -->
       <div class="p-3 border-t border-gray-800">
-        <button class="w-full bg-purple-700 hover:bg-purple-600 text-white py-2 rounded-lg flex items-center justify-center transition-colors">
+        <button id="download-button" class="w-full bg-purple-700 hover:bg-purple-600 text-white py-2 rounded-lg flex items-center justify-center transition-colors">
           <i class="fas fa-download mr-2"></i> Save Image
         </button>
       </div>
@@ -167,35 +167,12 @@
         const imageControls   = document.getElementById('image-controls');
         const deleteButton    = document.getElementById('delete-button');
     
-        // 1) Bind filter buttons
-        document.querySelectorAll('[data-filter]').forEach(button => {
-            button.addEventListener('click', function() {
-                const filterType = this.dataset.filter;
-                const csrfToken  = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                const formData   = new FormData();
-                      formData.append('filter', filterType);
-    
-                fetch('/home/apply_filter/', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                    body: formData
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.file_url) {
-                        editingImage.src = data.file_url + '?t=' + Date.now();
-                        localStorage.setItem('uploaded_image_url', data.file_url);
-                        alert('Filter applied successfully!');
-                    } else {
-                        alert('Failed to apply filter: ' + (data.error || 'Unknown error'));
-                    }
-                })
-                .catch(e => {
-                    console.error(e);
-                    alert('Network/server error applying filter');
-                });
-            });
-        });  // ← Close the forEach here!
+        const header = document.querySelector('header'); // Adjust selector to match your header
+        const editor = document.querySelector('.card');
+        if (header && editor) {
+            const headerHeight = header.offsetHeight;
+            editor.style.minHeight = `calc(100vh - ${headerHeight}px)`;
+        }
     
         // 2) Load image from localStorage (if any)
         const uploadedImageURL = localStorage.getItem('uploaded_image_url');
@@ -223,7 +200,7 @@
               editingImage.classList.add('hidden');
               uploadArea.classList.remove('hidden');
               localStorage.removeItem('uploaded_image_url');
-              alert('Image removed from session (mock S3 delete).');
+              alert('Image removed');
               return;
           }
   
@@ -308,31 +285,126 @@
             if (!browseButton.contains(e.target)) fileUpload.click();
         });
     
-        // 7) YOLOv8 processing handler
-        document.getElementById('yolov8-button').addEventListener('click', () => {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            fetch('/home/process_with_yolov8/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({})
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.file_url) {
-                    editingImage.src = data.file_url + '?t=' + Date.now();
-                    alert('Image processed successfully with YOLOv8!');
-                    localStorage.setItem('uploaded_image_url', data.file_url);
-                } else {
-                    alert('Failed to process image: ' + (data.error || 'Unknown error'));
+        // 7) YOLOv8 processing is now handled by the loading state management code
+    
+        // 8) Download button handler
+        document.getElementById('download-button').addEventListener('click', function() {
+            const currentImage = document.getElementById('editing-image');
+            if (!currentImage.src || currentImage.classList.contains('hidden')) {
+                alert('Please upload an image first');
+                return;
+            }
+            
+            // Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = currentImage.src;
+            downloadLink.download = 'edited-image.jpg'; // Default filename
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        });
+
+        // 9) Add loading state management for filters
+        let isProcessing = false;
+
+        // Update the filter buttons to show loading state
+        document.querySelectorAll('[data-filter], #yolov8-button').forEach(button => {
+            const originalHandler = button.onclick;
+            button.onclick = function(e) {
+                if (isProcessing) {
+                    e.preventDefault();
+                    return false;
                 }
-            })
-            .catch(e => {
-                console.error(e);
-                alert('Network/server error processing image');
-            });
+                
+                // Set processing state
+                isProcessing = true;
+                
+                // Store original button content
+                const originalContent = this.innerHTML;
+                
+                // Update button to show loading state
+                this.innerHTML = `<i class="fas fa-spinner fa-spin mr-3 text-purple-400 w-5 text-center"></i> Processing...`;
+                this.disabled = true;
+                
+                // Add overlay to indicate processing
+                const overlay = document.createElement('div');
+                overlay.id = 'processing-overlay';
+                overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                overlay.innerHTML = `
+                    <div class="bg-[#1a1a1a] p-6 rounded-lg shadow-lg text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                        <p class="text-white text-lg">Processing image...</p>
+                        <p class="text-gray-400 text-sm mt-2">Please wait, this may take a moment</p>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                
+                // Get the original filter type
+                const filterType = this.dataset.filter;
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const formData = new FormData();
+                
+                if (filterType) {
+                    formData.append('filter', filterType);
+                    
+                    fetch('/home/apply_filter/', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken },
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.file_url) {
+                            editingImage.src = data.file_url + '?t=' + Date.now();
+                            localStorage.setItem('uploaded_image_url', data.file_url);
+                        } else {
+                            alert('Failed to apply filter: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        alert('Network/server error applying filter');
+                    })
+                    .finally(() => {
+                        // Reset processing state
+                        isProcessing = false;
+                        this.innerHTML = originalContent;
+                        this.disabled = false;
+                        document.body.removeChild(overlay);
+                    });
+                } else if (this.id === 'yolov8-button') {
+                    fetch('/home/process_with_yolov8/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.file_url) {
+                            editingImage.src = data.file_url + '?t=' + Date.now();
+                            localStorage.setItem('uploaded_image_url', data.file_url);
+                        } else {
+                            alert('Failed to process image: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        alert('Network/server error processing image');
+                    })
+                    .finally(() => {
+                        // Reset processing state
+                        isProcessing = false;
+                        this.innerHTML = originalContent;
+                        this.disabled = false;
+                        document.body.removeChild(overlay);
+                    });
+                }
+                
+                return false;
+            };
         });
     
     });
