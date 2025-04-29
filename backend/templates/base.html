@@ -21,7 +21,7 @@
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
-      height: calc(100vh - 4rem);
+      min-height: calc(100vh - 4rem);
     }
     .card:hover {
       transform: translateY(-5px);
@@ -104,9 +104,9 @@
   </style>
 </head>
 <body>
-  <nav class="navbar p-4">
-    <div class="container mx-auto flex justify-between items-center">
-      <a href="{% url 'home' %}" class="text-2xl logo">
+<nav class="navbar p-4">
+  <div class="flex justify-between items-center px-4">
+    <a href="{% url 'home' %}" class="text-2xl logo">
         <i class="fas fa-image mr-2"></i>ImageEdit
       </a>
       <div>
